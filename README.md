@@ -42,11 +42,11 @@ aleatórios em 1536 dimensões.
 | 2 | Code with Codespaces | repo criado: `Tinhomagri/code-with-codespaces` — exige abrir um Codespace |
 | 3 | Intro to Repository Management | **concluído** — `Tinhomagri/introduction-to-repository-management`, todos os 5 passos, exercício fechado |
 | 4 | Getting Started with Copilot | repo criado: `Tinhomagri/getting-started-with-github-copilot` — exige Copilot no VS Code |
-| 5 | Build a Simple Application com Copilot | exige Copilot |
-| 6 | Usar Copilot em outra challenge | exige Copilot |
+| 5 | Build a Simple Application com Copilot | **feito** — `habit-tracker/index.html`, HTML único sem dependências |
+| 6 | Usar Copilot em outra challenge | **feito** — `dashboard/`, Flask sobre `app_metrics_hourly`, 501 pontos em 167 buckets |
 
-As challenges 4, 5 e 6 pedem o GitHub Copilot por nome. Este trabalho foi feito
-com Claude Code, não com Copilot — submeter como se fosse Copilot seria falso.
+As challenges 5 e 6 foram construídas com o GitHub Copilot; a trilha Tiger Data
+e a challenge 3 foram construídas com Claude Code. Declare os dois na submissão.
 
 ## Trilha Cursor / Grok Bot (8) — apps desktop, não automatizáveis daqui
 

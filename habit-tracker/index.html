@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Habit Tracker</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f5f7fb; --surface: #fff; --text: #172033; --muted: #65708a;
+      --border: #d9dfeb; --accent: #4966d8; --accent-contrast: #fff;
+      --done: #4caf78; --shadow: 0 12px 30px rgb(30 45 80 / 10%);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #111522; --surface: #1b2131; --text: #edf1ff; --muted: #aab3cb;
+        --border: #343d54; --accent: #91a6ff; --accent-contrast: #101522;
+        --done: #63cf91; --shadow: 0 12px 30px rgb(0 0 0 / 25%); }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+      font: 16px/1.45 system-ui, sans-serif; }
+    main { width: min(1100px, 100% - 2rem); margin: 0 auto; padding: 3rem 0; }
+    h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.5rem); }
+    .intro { color: var(--muted); margin: .5rem 0 2rem; }
+    .toolbar, .habit { background: var(--surface); border: 1px solid var(--border);
+      border-radius: 1rem; box-shadow: var(--shadow); }
+    .toolbar { display: flex; gap: .75rem; padding: 1rem; margin-bottom: 1.5rem; }
+    input, button { border: 1px solid var(--border); border-radius: .6rem; font: inherit; }
+    input { flex: 1; min-width: 0; padding: .7rem .8rem; background: var(--bg); color: var(--text); }
+    button { cursor: pointer; padding: .7rem .9rem; background: var(--surface); color: var(--text); }
+    button:hover, button:focus-visible { border-color: var(--accent); }
+    .primary { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
+    .secondary-actions { display: flex; gap: .5rem; margin-bottom: 1.5rem; }
+    .empty { color: var(--muted); text-align: center; padding: 2rem; }
+    .habit { padding: 1.25rem; margin-bottom: 1rem; }
+    .habit-header { display: flex; align-items: center; gap: 1rem; }
+    .habit-header h2 { flex: 1; font-size: 1.15rem; margin: 0; }
+    .delete { color: #d65c6c; }
+    .stats { display: flex; gap: 1rem; color: var(--muted); font-size: .9rem; margin: .75rem 0 1rem; }
+    .stats strong { color: var(--text); }
+    .days { display: grid; grid-template-columns: repeat(30, minmax(2rem, 1fr)); gap: .35rem; overflow-x: auto; padding-bottom: .25rem; }
+    .day { aspect-ratio: 1; min-width: 2rem; padding: 0; border-radius: .4rem; font-size: .75rem; }
+    .day.done { background: var(--done); color: #fff; border-color: var(--done); }
+    .day:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    .date-label { color: var(--muted); font-size: .72rem; text-align: center; margin-top: .35rem; }
+    @media (max-width: 650px) { main { padding-top: 2rem; } .toolbar { flex-wrap: wrap; }
+      .toolbar input { flex-basis: 100%; } .days { grid-template-columns: repeat(30, 2rem); } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Meus hábitos</h1>
+    <p class="intro">Pequenos passos, consistência todos os dias.</p>
+    <form class="toolbar" id="habit-form">
+      <input id="habit-name" aria-label="Nome do hábito" placeholder="Ex.: Ler 20 minutos" required maxlength="80">
+      <button class="primary" type="submit">Adicionar hábito</button>
+    </form>
+    <div class="secondary-actions">
+      <button id="export" type="button">Exportar JSON</button>
+      <button id="import" type="button">Importar JSON</button>
+      <input id="import-file" type="file" accept="application/json" hidden>
+    </div>
+    <section id="habits" aria-live="polite"></section>
+  </main>
+  <script>
+    const STORAGE_KEY = 'habit-tracker:v1';
+    const today = new Date();
+    const dateKey = date => date.toISOString().slice(0, 10);
+    const days = Array.from({ length: 30 }, (_, index) => {
+      const date = new Date(today); date.setHours(12, 0, 0, 0); date.setDate(today.getDate() - (29 - index));
+      return dateKey(date);
+    });
+    let habits = load();
+
+    function load() {
+      try {
+        const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        return Array.isArray(value) ? value.filter(item => item && typeof item.name === 'string') : [];
+      } catch { return []; }
+    }
+    function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(habits)); }
+    function streaks(completed) {
+      let current = 0, best = 0, run = 0;
+      days.forEach(day => { run = completed.includes(day) ? run + 1 : 0; best = Math.max(best, run); });
+      for (let index = days.length - 1; index >= 0 && completed.includes(days[index]); index--) current++;
+      return { current, best };
+    }
+    function render() {
+      const root = document.querySelector('#habits');
+      root.replaceChildren();
+      if (!habits.length) { root.innerHTML = '<p class="empty">Nenhum hábito cadastrado ainda.</p>'; return; }
+      habits.forEach((habit, habitIndex) => {
+        const card = document.createElement('article'); card.className = 'habit';
+        const header = document.createElement('div'); header.className = 'habit-header';
+        const title = document.createElement('h2'); title.textContent = habit.name;
+        const remove = document.createElement('button'); remove.className = 'delete'; remove.type = 'button';
+        remove.textContent = 'Remover'; remove.setAttribute('aria-label', `Remover ${habit.name}`);
+        remove.addEventListener('click', () => { habits.splice(habitIndex, 1); save(); render(); });
+        header.append(title, remove);
+        const stats = streaks(habit.completed || []);
+        const summary = document.createElement('div'); summary.className = 'stats';
+        summary.innerHTML = `<span>Sequência atual: <strong>${stats.current}</strong></span><span>Maior sequência: <strong>${stats.best}</strong></span>`;
+        const grid = document.createElement('div'); grid.className = 'days'; grid.setAttribute('role', 'group');
+        days.forEach((day, dayIndex) => {
+          const button = document.createElement('button'); button.type = 'button'; button.className = 'day';
+          button.textContent = new Date(`${day}T12:00:00`).getDate(); button.title = day;
+          button.setAttribute('aria-label', `${day}${(habit.completed || []).includes(day) ? ', feito' : ', não feito'}`);
+          button.setAttribute('aria-pressed', String((habit.completed || []).includes(day)));
+          button.tabIndex = dayIndex === 0 ? 0 : -1;
+          if ((habit.completed || []).includes(day)) button.classList.add('done');
+          button.addEventListener('click', () => {
+            habit.completed = habit.completed || [];
+            habit.completed = habit.completed.includes(day) ? habit.completed.filter(item => item !== day) : [...habit.completed, day];
+            save(); render();
+            grid.querySelectorAll('.day')[dayIndex].focus();
+          });
+          button.addEventListener('keydown', event => {
+            if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+            event.preventDefault();
+            const target = event.key === 'Home' ? 0 : event.key === 'End' ? 29 : Math.max(0, Math.min(29, dayIndex + (event.key === 'ArrowRight' ? 1 : -1)));
+            grid.querySelectorAll('.day')[target].focus();
+          });
+          grid.append(button);
+        });
+        card.append(header, summary, grid); root.append(card);
+      });
+    }
+    document.querySelector('#habit-form').addEventListener('submit', event => {
+      event.preventDefault(); const input = document.querySelector('#habit-name');
+      habits.push({ name: input.value.trim(), completed: [] }); input.value = ''; save(); render(); input.focus();
+    });
+    document.querySelector('#export').addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(habits, null, 2)], { type: 'application/json' });
+      const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'habitos.json'; link.click();
+      URL.revokeObjectURL(link.href);
+    });
+    document.querySelector('#import').addEventListener('click', () => document.querySelector('#import-file').click());
+    document.querySelector('#import-file').addEventListener('change', async event => {
+      try {
+        const imported = JSON.parse(await event.target.files[0].text());
+        if (!Array.isArray(imported) || imported.some(item => !item || typeof item.name !== 'string' || !Array.isArray(item.completed))) throw new Error('Formato inválido');
+        habits = imported; save(); render();
+      } catch { alert('Não foi possível importar este arquivo JSON.'); }
+      event.target.value = '';
+    });
+    render();
+  </script>
+</body>
+</html>

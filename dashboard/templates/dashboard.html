@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>App metrics</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4"></script>
+  <style>
+    body { margin: 0; padding: 2rem; background: #f5f7fb; color: #172033; font: 16px system-ui, sans-serif; }
+    main { max-width: 1100px; margin: auto; } .card { padding: 1.5rem; background: white; border-radius: 1rem; }
+    #message { color: #65708a; } canvas { max-height: 560px; }
+  </style>
+</head>
+<body><main><h1>Latência por serviço</h1><section class="card"><p id="message">Carregando métricas...</p><canvas id="latency" aria-label="Latência média e p95 por hora" role="img"></canvas></section></main>
+<script>
+  fetch('/api/metrics').then(response => { if (!response.ok) throw new Error('Falha ao consultar métricas'); return response.json(); })
+    .then(rows => {
+      const message = document.querySelector('#message');
+      if (!rows.length) { message.textContent = 'A view app_metrics_hourly ainda não contém dados.'; return; }
+      message.remove();
+      const services = [...new Set(rows.map(row => row.service))];
+      const colors = ['#4966d8', '#4caf78', '#e29b4e', '#b45bd6', '#d65c6c'];
+      const datasets = services.flatMap((service, index) => [
+        { label: `${service} · média`, data: rows.filter(row => row.service === service).map(row => ({ x: row.bucket, y: row.avg })), borderColor: colors[index % colors.length], tension: .25 },
+        { label: `${service} · p95`, data: rows.filter(row => row.service === service).map(row => ({ x: row.bucket, y: row.p95 })), borderColor: colors[index % colors.length], borderDash: [6, 4], tension: .25 }
+      ]);
+      new Chart(document.querySelector('#latency'), { type: 'line', data: { datasets }, options: { parsing: false, scales: { x: { type: 'category' }, y: { beginAtZero: true, title: { display: true, text: 'ms' } } }, interaction: { mode: 'nearest', intersect: false } } });
+    }).catch(error => { document.querySelector('#message').textContent = `Não foi possível carregar as métricas: ${error.message}`; });
+</script></body></html>
