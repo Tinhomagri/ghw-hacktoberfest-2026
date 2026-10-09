@@ -36,13 +36,17 @@ aleatórios em 1536 dimensões.
 
 ## Trilha GitHub (7) — conta + screenshot
 
-1. GitHub Student Developer Pack — https://mlh.link/ghwHF1026-github
-2. Code with Codespaces (GitHub Skills, ~1h)
-3. Intro to Repository Management (GitHub Skills, ~1h)
-4. Getting Started with Copilot (GitHub Skills, ~1h)
-5. Build a Simple Application with Copilot — app pequeno e independente
-6. Use Copilot para completar outra challenge da semana
-7. (o item 5 e o 6 aceitam o mesmo repositório, com descrições diferentes)
+| # | Challenge | Estado |
+|---|---|---|
+| 1 | GitHub Student Developer Pack | precisa da sua verificação estudantil |
+| 2 | Code with Codespaces | repo criado: `Tinhomagri/code-with-codespaces` — exige abrir um Codespace |
+| 3 | Intro to Repository Management | **concluído** — `Tinhomagri/introduction-to-repository-management`, todos os 5 passos, exercício fechado |
+| 4 | Getting Started with Copilot | repo criado: `Tinhomagri/getting-started-with-github-copilot` — exige Copilot no VS Code |
+| 5 | Build a Simple Application com Copilot | exige Copilot |
+| 6 | Usar Copilot em outra challenge | exige Copilot |
+
+As challenges 4, 5 e 6 pedem o GitHub Copilot por nome. Este trabalho foi feito
+com Claude Code, não com Copilot — submeter como se fosse Copilot seria falso.
 
 ## Trilha Cursor / Grok Bot (8) — apps desktop, não automatizáveis daqui
 
